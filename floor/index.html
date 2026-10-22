@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Executive Floor — Alice AI Office Hub · Concept Prototype</title>
+<meta name="description" content="Concept 2 of 3: ten AI officers arranged as a living corporate org chart under one founder. An Alice AI Office Hub prototype.">
+<style>
+  :root{
+    --bg:#060607;
+    --panel:rgba(22,22,27,.78);
+    --panel-solid:#101014;
+    --gold:#c9a227;
+    --gold-2:#ecd27c;
+    --gold-dim:rgba(201,162,39,.38);
+    --ink:#f3eee0;
+    --mut:#a89f8a;
+    --faint:#6f695b;
+    --green:#5cc98d;
+    --radius:16px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1100px 480px at 50% -120px, rgba(201,162,39,.14), transparent 60%),
+      radial-gradient(800px 500px at 85% 110%, rgba(201,162,39,.06), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+    padding:34px 18px 30px;
+  }
+  .wrap{max-width:1360px;margin:0 auto}
+
+  /* ---------- header ---------- */
+  header{text-align:center;margin-bottom:8px}
+  .eyebrow{
+    font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--gold);
+    border:1px solid var(--gold-dim);display:inline-block;padding:7px 16px;border-radius:999px;
+    background:rgba(201,162,39,.06);
+  }
+  h1{
+    font-family:Georgia,"Times New Roman",serif;font-weight:600;
+    font-size:clamp(38px,6vw,64px);line-height:1.05;margin:18px 0 8px;letter-spacing:.01em;
+  }
+  h1 .gold{color:var(--gold-2)}
+  .sub{color:var(--mut);font-size:clamp(15px,2.2vw,18px);max-width:640px;margin:0 auto}
+  .sub strong{color:var(--ink)}
+  .controls{margin:22px 0 4px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  #runBtn{
+    appearance:none;border:0;cursor:pointer;
+    background:linear-gradient(180deg,var(--gold-2),var(--gold));
+    color:#191304;font-weight:800;letter-spacing:.14em;font-size:13px;text-transform:uppercase;
+    padding:14px 30px;border-radius:999px;
+    box-shadow:0 0 0 1px rgba(236,210,124,.5),0 10px 30px rgba(201,162,39,.25);
+    transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+  }
+  #runBtn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 0 0 1px rgba(236,210,124,.8),0 14px 36px rgba(201,162,39,.35)}
+  #runBtn:disabled{opacity:.65;cursor:wait}
+  #readout{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);min-height:16px}
+  #readout b{color:var(--gold-2);font-weight:600}
+
+  /* ---------- chart ---------- */
+  .chart{position:relative;margin-top:14px;padding:6px 2px 2px}
+  #wires{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:visible}
+  #wires .wire{fill:none;stroke:rgba(201,162,39,.35);stroke-width:1.4}
+  #wires .wires-flow{fill:none;stroke:rgba(201,162,39,.12);stroke-width:1.4;stroke-dasharray:3 6}
+  #wires .pulse-dot{fill:var(--gold-2);filter:drop-shadow(0 0 7px rgba(236,210,124,.95))}
+  .chart-inner{position:relative;z-index:1}
+
+  /* ---------- founder ---------- */
+  .founder-wrap{display:flex;justify-content:center;margin-bottom:34px}
+  .founder{
+    width:min(430px,100%);text-align:center;
+    background:linear-gradient(180deg, rgba(201,162,39,.13), rgba(201,162,39,.04) 55%), var(--panel);
+    border:1px solid var(--gold);
+    border-radius:var(--radius);
+    padding:22px 24px 18px;
+    box-shadow:0 0 44px rgba(201,162,39,.16), inset 0 1px 0 rgba(236,210,124,.25);
+    backdrop-filter:blur(6px);
+  }
+  .founder .crown{font-size:12px;letter-spacing:.4em;color:var(--gold);text-transform:uppercase}
+  .founder h2{font-family:Georgia,"Times New Roman",serif;font-size:30px;font-weight:600;margin:7px 0 2px}
+  .founder .role{font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-2)}
+  .founder .order{
+    margin:13px auto 12px;color:var(--mut);font-size:14px;line-height:1.55;max-width:330px;
+  }
+  .founder .order em{color:var(--ink);font-style:italic}
+
+  /* ---------- departments ---------- */
+  .depts{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;align-items:start}
+  .dept-head{
+    text-align:center;padding:11px 8px 10px;margin-bottom:14px;
+    background:var(--panel);border:1px solid var(--gold-dim);border-radius:12px;
+    backdrop-filter:blur(6px);
+  }
+  .dept-head .phase{font-size:10px;letter-spacing:.3em;color:var(--faint);text-transform:uppercase}
+  .dept-head h3{font-size:19px;letter-spacing:.3em;margin:3px 0 2px;color:var(--gold-2);font-weight:800;padding-left:.3em}
+  .dept-head p{font-family:Georgia,serif;font-style:italic;font-size:12.5px;color:var(--mut)}
+
+  /* ---------- cards ---------- */
+  .card{perspective:1400px;height:478px;margin-bottom:16px;cursor:pointer;outline:none}
+  .card-inner{
+    position:relative;width:100%;height:100%;
+    transform-style:preserve-3d;transition:transform .7s cubic-bezier(.2,.7,.25,1);
+  }
+  .card.flipped .card-inner{transform:rotateY(180deg)}
+  .card:focus-visible .card-inner{box-shadow:0 0 0 2px var(--gold-2);border-radius:var(--radius)}
+  .face{
+    position:absolute;inset:0;border-radius:var(--radius);overflow:hidden;
+    backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    background:var(--panel);border:1px solid rgba(201,162,39,.28);
+    backdrop-filter:blur(6px);
+    display:flex;flex-direction:column;
+    transition:border-color .3s ease, box-shadow .3s ease;
+  }
+  .card.active .face{border-color:var(--gold-2);box-shadow:0 0 34px rgba(201,162,39,.35)}
+  .card.done .face{border-color:rgba(201,162,39,.55)}
+
+  .photo{position:relative;height:44%;flex:0 0 auto;background:#0a0a0c}
+  .photo img{width:100%;height:100%;object-fit:cover;object-position:center 22%;display:block}
+  .photo::after{
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(180deg,transparent 55%,rgba(6,6,7,.55));
+  }
+  .num{
+    position:absolute;top:10px;left:10px;z-index:2;
+    font-size:11px;font-weight:800;letter-spacing:.14em;color:#191304;
+    background:linear-gradient(180deg,var(--gold-2),var(--gold));
+    padding:4px 9px;border-radius:7px;
+  }
+  .front-body{padding:14px 15px 12px;display:flex;flex-direction:column;flex:1}
+  .front-body h3{font-family:Georgia,"Times New Roman",serif;font-size:20px;font-weight:600;line-height:1.15}
+  .hook{color:var(--mut);font-size:13px;line-height:1.5;margin-top:6px;flex:1}
+  .meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+  .badge{
+    font-size:10px;font-weight:800;letter-spacing:.22em;color:var(--gold-2);
+    border:1px solid var(--gold-dim);padding:4px 8px;border-radius:6px;background:rgba(201,162,39,.07);
+  }
+  .pill{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--mut);
+    border:1px solid rgba(255,255,255,.14);padding:4px 9px;border-radius:999px;white-space:nowrap;
+  }
+  .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--faint);flex:0 0 auto}
+  .pill.working{color:var(--gold-2);border-color:var(--gold)}
+  .pill.working .dot{background:var(--gold-2);animation:pulse 1s ease-in-out infinite}
+  .pill.done{color:#cfe9da;border-color:rgba(92,201,141,.5)}
+  .pill.done .dot{background:var(--green)}
+  .pill.queued{color:var(--gold-2);border-color:var(--gold-dim)}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+  .tap-hint{margin-top:10px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);text-align:center}
+
+  /* card back */
+  .face.back{transform:rotateY(180deg);padding:14px 14px 12px;background:linear-gradient(180deg, rgba(201,162,39,.07), transparent 34%), var(--panel-solid)}
+  .back-head{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+  .back-head img{width:40px;height:40px;border-radius:50%;object-fit:cover;object-position:center 22%;border:1px solid var(--gold)}
+  .back-head h4{font-family:Georgia,serif;font-size:16.5px;font-weight:600;line-height:1.1}
+  .back-head .pill{margin-left:auto}
+  .blk{margin-bottom:10px}
+  .blk label{display:block;font-size:9.5px;font-weight:800;letter-spacing:.26em;color:var(--gold);margin-bottom:3px}
+  .blk p{font-size:12.5px;line-height:1.48;color:var(--ink)}
+  .blk.kpi p{color:var(--gold-2);font-weight:600}
+  .chat{margin-top:2px;display:flex;flex-direction:column;gap:7px}
+  .bubble{
+    max-width:94%;padding:8px 10px;border-radius:11px;font-size:12px;line-height:1.45;
+    display:flex;gap:8px;align-items:flex-start;
+  }
+  .bubble .tag{font-size:9px;font-weight:800;letter-spacing:.12em;padding:2px 6px;border-radius:5px;flex:0 0 auto;margin-top:1px}
+  .bubble.in{align-self:flex-start;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-bottom-left-radius:3px}
+  .bubble.in .tag{background:rgba(255,255,255,.12);color:var(--ink)}
+  .bubble.out{align-self:flex-end;background:rgba(201,162,39,.13);border:1px solid var(--gold-dim);border-bottom-right-radius:3px}
+  .bubble.out .tag{background:var(--gold);color:#191304}
+  .back .tap-hint{margin-top:auto;padding-top:8px}
+
+  /* ---------- footer ---------- */
+  footer{
+    margin-top:26px;text-align:center;color:var(--faint);font-size:12.5px;line-height:1.65;
+    border-top:1px solid rgba(201,162,39,.16);padding-top:18px;
+  }
+  footer b{color:var(--mut)}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:1150px){
+    .depts{grid-template-columns:repeat(3,1fr)}
+  }
+  @media (max-width:760px){
+    .depts{grid-template-columns:repeat(2,1fr)}
+    .card{height:492px}
+    body{padding:24px 12px 24px}
+  }
+  @media (max-width:470px){
+    .depts{grid-template-columns:1fr}
+    .card{height:500px}
+    .founder-wrap{margin-bottom:26px}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none !important;transition:none !important}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Alice AI Office Hub · Concept 02</span>
+    <h1>The Executive <span class="gold">Floor</span></h1>
+    <p class="sub">Ten AI officers, arranged like the company they run. <strong>One founder at the top — every department below, working in the open.</strong> Tap any officer to see their task and their handoff.</p>
+    <div class="controls">
+      <button id="runBtn" type="button">Run the demo week</button>
+      <div id="readout" aria-live="polite">The floor is standing by</div>
+    </div>
+  </header>
+
+  <main class="chart" id="chart">
+    <svg id="wires" aria-hidden="true"></svg>
+    <div class="chart-inner">
+
+      <div class="founder-wrap">
+        <section class="founder" id="founderCard" aria-label="Founder">
+          <div class="crown">The Top Office</div>
+          <h2>YOU</h2>
+          <div class="role">Founder &amp; Operator</div>
+          <p class="order">This week's order: <em>"Get the new booking page live — and bring me the numbers."</em></p>
+          <span class="pill" id="founderPill"><span class="dot"></span>IN COMMAND</span>
+        </section>
+      </div>
+
+      <div class="depts">
+
+        <!-- FIND -->
+        <section class="dept" aria-label="Find department">
+          <div class="dept-head">
+            <div class="phase">Phase I</div>
+            <h3>FIND</h3>
+            <p>Spot the opening first</p>
+          </div>
+
+          <article class="card" data-agent="1" tabindex="0" role="button" aria-pressed="false" aria-label="Research Analyst — tap to flip">
+            <div class="card-inner">
+              <div class="face front">
+                <div class="photo"><img src="assets/avatars/agent-01.jpg" alt="Photoreal portrait of the Research Analyst, a fictional AI officer persona" loading="lazy"><span class="num">01</span></div>
+                <div class="front-body">
+                  <h3>Research Analyst</h3>
+                  <p class="hook">Reads the whole local market before you spend a dollar.</p>
+                  <div class="meta"><span class="badge">FIND</span><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                  <div class="tap-hint">Tap to flip · task &amp; handoff</div>
+                </div>
+              </div>
+              <div class="face back">
+                <div class="back-head"><img src="assets/avatars/agent-01.jpg" alt=""><div><h4>Research Analyst</h4><span class="badge">FIND</span></div><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                <div class="blk"><label>On Task</label><p>Mapping every mover within 15 miles of Wilkes-Barre — and exactly how each one books jobs.</p></div>
+                <div class="blk kpi"><label>Board Line</label><p>12 rivals mapped · 3 booking gaps found</p></div>
+                <div class="chat">
+                  <div class="bubble in"><span class="tag">IN</span><p>Founder's order: "Get the booking page live this week. Find the angle first."</p></div>
+                  <div class="bubble out"><span class="tag">OUT</span><p>Angle found: "Book in 60 seconds — price before we pull up." Rival gaps attached.</p></div>
+                </div>
+                <div class="tap-hint">Tap to flip back</div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card" data-agent="2" tabindex="0" role="button" aria-pressed="false" aria-label="Product Manager — tap to flip">
+            <div class="card-inner">
+              <div class="face front">
+                <div class="photo"><img src="assets/avatars/agent-02.jpg" alt="Photoreal portrait of the Product Manager, a fictional AI officer persona" loading="lazy"><span class="num">02</span></div>
+                <div class="front-body">
+                  <h3>Product Manager</h3>
+                  <p class="hook">Turns a loose idea into a build list with nothing extra on it.</p>
+                  <div class="meta"><span class="badge">FIND</span><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                  <div class="tap-hint">Tap to flip · task &amp; handoff</div>
+                </div>
+              </div>
+              <div class="face back">
+                <div class="back-head"><img src="assets/avatars/agent-02.jpg" alt=""><div><h4>Product Manager</h4><span class="badge">FIND</span></div><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                <div class="blk"><label>On Task</label><p>Scoping the booking page: what it must do on day one, and what can safely wait.</p></div>
+                <div class="blk kpi"><label>Board Line</label><p>6 must-haves locked · 0 nice-to-haves</p></div>
+                <div class="chat">
+                  <div class="bubble in"><span class="tag">IN</span><p>Research brief: the angle, plus the three gaps rivals leave open.</p></div>
+                  <div class="bubble out"><span class="tag">OUT</span><p>Scope set: quote form, photo upload, deposit step, confirmation text. Six items, no more.</p></div>
+                </div>
+                <div class="tap-hint">Tap to flip back</div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <!-- BUILD -->
+        <section class="dept" aria-label="Build department">
+          <div class="dept-head">
+            <div class="phase">Phase II</div>
+            <h3>BUILD</h3>
+            <p>Make it real</p>
+          </div>
+
+          <article class="card" data-agent="3" tabindex="0" role="button" aria-pressed="false" aria-label="Product Designer — tap to flip">
+            <div class="card-inner">
+              <div class="face front">
+                <div class="photo"><img src="assets/avatars/agent-03.jpg" alt="Photoreal portrait of the Product Designer, a fictional AI officer persona" loading="lazy"><span class="num">03</span></div>
+                <div class="front-body">
+                  <h3>Product Designer</h3>
+                  <p class="hook">Draws the screens a customer can finish with one thumb.</p>
+                  <div class="meta"><span class="badge">BUILD</span><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                  <div class="tap-hint">Tap to flip · task &amp; handoff</div>
+                </div>
+              </div>
+              <div class="face back">
+                <div class="back-head"><img src="assets/avatars/agent-03.jpg" alt=""><div><h4>Product Designer</h4><span class="badge">BUILD</span></div><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                <div class="blk"><label>On Task</label><p>Designing the booking flow for a phone held in a driveway — not a desk.</p></div>
+                <div class="blk kpi"><label>Board Line</label><p>4 screens drafted · one-thumb pass clean</p></div>
+                <div class="chat">
+                  <div class="bubble in"><span class="tag">IN</span><p>Scope: six items. Quote form first, photo step second.</p></div>
+                  <div class="bubble out"><span class="tag">OUT</span><p>Screens ready: hero, quote form, photo step, thank-you. Mobile first, big tap targets.</p></div>
+                </div>
+                <div class="tap-hint">Tap to flip back</div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card" data-agent="4" tabindex="0" role="button" aria-pressed="false" aria-label="Engineer — tap to flip">
+            <div class="card-inner">
+              <div class="face front">
+                <div class="photo"><img src="assets/avatars/agent-04.jpg" alt="Photoreal portrait of the Engineer, a fictional AI officer persona" loading="lazy"><span class="num">04</span></div>
+                <div class="front-body">
+                  <h3>Engineer</h3>
+                  <p class="hook">Ships the working page and wires every wire behind it.</p>
+                  <div class="meta"><span class="badge">BUILD</span><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                  <div class="tap-hint">Tap to flip · task &amp; handoff</div>
+                </div>
+              </div>
+              <div class="face back">
+                <div class="back-head"><img src="assets/avatars/agent-04.jpg" alt=""><div><h4>Engineer</h4><span class="badge">BUILD</span></div><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                <div class="blk"><label>On Task</label><p>Building the page and connecting the form straight to the owner's inbox and phone.</p></div>
+                <div class="blk kpi"><label>Board Line</label><p>Live on staging · form tested end-to-end</p></div>
+                <div class="chat">
+                  <div class="bubble in"><span class="tag">IN</span><p>Final screens plus the six-item build list.</p></div>
+                  <div class="bubble out"><span class="tag">OUT</span><p>Page built. Every test booking landed in the inbox — and rang the phone.</p></div>
+                </div>
+                <div class="tap-hint">Tap to flip back</div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <!-- SELL -->
+        <section class="dept" aria-label="Sell department">
+          <div class="dept-head">
+            <div class="phase">Phase III</div>
+            <h3>SELL</h3>
+            <p>Fill the pipeline</p>
+          </div>
+
+          <article class="card" data-agent="5" tabindex="0" role="button" aria-pressed="false" aria-label="Marketing Specialist — tap to flip">
+            <div class="card-inner">
+              <div class="face front">
+                <div class="photo"><img src="assets/avatars/agent-05.jpg" alt="Photoreal portrait of the Marketing Specialist, a fictional AI officer persona" loading="lazy"><span class="num">05</span></div>
+                <div class="front-body">
+                  <h3>Marketing Specialist</h3>
+                  <p class="hook">Puts the offer in front of the streets that are actually moving.</p>
+                  <div class="meta"><span class="badge">SELL</span><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                  <div class="tap-hint">Tap to flip · task &amp; handoff</div>
+                </div>
+              </div>
+              <div class="face back">
+                <div class="back-head"><img src="assets/avatars/agent-05.jpg" alt=""><div><h4>Marketing Specialist</h4><span class="badge">SELL</span></div><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                <div class="blk"><label>On Task</label><p>Writing the launch for Facebook and Google, aimed at a 15-mile radius.</p></div>
+                <div class="blk kpi"><label>Board Line</label><p>3 launch posts set · 2 neighborhoods first</p></div>
+                <div class="chat">
+                  <div class="bubble in"><span class="tag">IN</span><p>Live page link, plus the angle: book in 60 seconds.</p></div>
+                  <div class="bubble out"><span class="tag">OUT</span><p>Launch is out. First inquiries arriving from the two target neighborhoods.</p></div>
+                </div>
+                <div class="tap-hint">Tap to flip back</div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card" data-agent="6" tabindex="0" role="button" aria-pressed="false" aria-label="Sales Associate — tap to flip">
+            <div class="card-inner">
+              <div class="face front">
+                <div class="photo"><img src="assets/avatars/agent-06.jpg" alt="Photoreal portrait of the Sales Associate, a fictional AI officer persona" loading="lazy"><span class="num">06</span></div>
+                <div class="front-body">
+                  <h3>Sales Associate</h3>
+                  <p class="hook">Answers every inquiry inside the hour, in your voice, at your prices.</p>
+                  <div class="meta"><span class="badge">SELL</span><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                  <div class="tap-hint">Tap to flip · task &amp; handoff</div>
+                </div>
+              </div>
+              <div class="face back">
+                <div class="back-head"><img src="assets/avatars/agent-06.jpg" alt=""><div><h4>Sales Associate</h4><span class="badge">SELL</span></div><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                <div class="blk"><label>On Task</label><p>Working the new inquiries: greeting, the right questions, booking the estimate.</p></div>
+                <div class="blk kpi"><label>Board Line</label><p>5 leads touched · 2 estimates booked</p></div>
+                <div class="chat">
+                  <div class="bubble in"><span class="tag">IN</span><p>Five fresh inquiries off the launch posts.</p></div>
+                  <div class="bubble out"><span class="tag">OUT</span><p>All five answered. Two phone estimates booked for tomorrow morning.</p></div>
+                </div>
+                <div class="tap-hint">Tap to flip back</div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <!-- DELIVER -->
+        <section class="dept" aria-label="Deliver department">
+          <div class="dept-head">
+            <div class="phase">Phase IV</div>
+            <h3>DELIVER</h3>
+            <p>Keep every promise</p>
+          </div>
+
+          <article class="card" data-agent="7" tabindex="0" role="button" aria-pressed="false" aria-label="Operations Manager — tap to flip">
+            <div class="card-inner">
+              <div class="face front">
+                <div class="photo"><img src="assets/avatars/agent-07.jpg" alt="Photoreal portrait of the Operations Manager, a fictional AI officer persona" loading="lazy"><span class="num">07</span></div>
+                <div class="front-body">
+                  <h3>Operations Manager</h3>
+                  <p class="hook">Keeps crews, trucks and calendars in one straight line.</p>
+                  <div class="meta"><span class="badge">DELIVER</span><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                  <div class="tap-hint">Tap to flip · task &amp; handoff</div>
+                </div>
+              </div>
+              <div class="face back">
+                <div class="back-head"><img src="assets/avatars/agent-07.jpg" alt=""><div><h4>Operations Manager</h4><span class="badge">DELIVER</span></div><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                <div class="blk"><label>On Task</label><p>Slotting tomorrow's estimates alongside the week's confirmed moves.</p></div>
+                <div class="blk kpi"><label>Board Line</label><p>Week scheduled · 0 double-bookings</p></div>
+                <div class="chat">
+                  <div class="bubble in"><span class="tag">IN</span><p>Two estimates booked, plus three moves already on the books.</p></div>
+                  <div class="bubble out"><span class="tag">OUT</span><p>Crews and trucks assigned. Confirmation texts sent to every customer.</p></div>
+                </div>
+                <div class="tap-hint">Tap to flip back</div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card" data-agent="8" tabindex="0" role="button" aria-pressed="false" aria-label="Support Specialist — tap to flip">
+            <div class="card-inner">
+              <div class="face front">
+                <div class="photo"><img src="assets/avatars/agent-08.jpg" alt="Photoreal portrait of the Support Specialist wearing a headset, a fictional AI officer persona" loading="lazy"><span class="num">08</span></div>
+                <div class="front-body">
+                  <h3>Support Specialist</h3>
+                  <p class="hook">Answers customers at 2 PM or 2 AM — same patience, same facts.</p>
+                  <div class="meta"><span class="badge">DELIVER</span><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                  <div class="tap-hint">Tap to flip · task &amp; handoff</div>
+                </div>
+              </div>
+              <div class="face back">
+                <div class="back-head"><img src="assets/avatars/agent-08.jpg" alt=""><div><h4>Support Specialist</h4><span class="badge">DELIVER</span></div><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                <div class="blk"><label>On Task</label><p>Holding the inbox: stairs, boxes, parking and timing questions, answered straight.</p></div>
+                <div class="blk kpi"><label>Board Line</label><p>Avg. first reply 38 sec · 0 left waiting</p></div>
+                <div class="chat">
+                  <div class="bubble in"><span class="tag">IN</span><p>Eleven customer questions stacked up overnight.</p></div>
+                  <div class="bubble out"><span class="tag">OUT</span><p>All eleven answered. Two turned into bookings — flagged for Sales.</p></div>
+                </div>
+                <div class="tap-hint">Tap to flip back</div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <!-- GROW -->
+        <section class="dept" aria-label="Grow department">
+          <div class="dept-head">
+            <div class="phase">Phase V</div>
+            <h3>GROW</h3>
+            <p>Compound the wins</p>
+          </div>
+
+          <article class="card" data-agent="9" tabindex="0" role="button" aria-pressed="false" aria-label="Data Analyst — tap to flip">
+            <div class="card-inner">
+              <div class="face front">
+                <div class="photo"><img src="assets/avatars/agent-09.jpg" alt="Photoreal portrait of the Data Analyst, a fictional AI officer persona" loading="lazy"><span class="num">09</span></div>
+                <div class="front-body">
+                  <h3>Data Analyst</h3>
+                  <p class="hook">Shows which jobs made money and which ones quietly ate it.</p>
+                  <div class="meta"><span class="badge">GROW</span><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                  <div class="tap-hint">Tap to flip · task &amp; handoff</div>
+                </div>
+              </div>
+              <div class="face back">
+                <div class="back-head"><img src="assets/avatars/agent-09.jpg" alt=""><div><h4>Data Analyst</h4><span class="badge">GROW</span></div><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                <div class="blk"><label>On Task</label><p>Closing the books on week one of the new booking page.</p></div>
+                <div class="blk kpi"><label>Board Line</label><p>14 leads · 6 jobs booked · Saturday peaks</p></div>
+                <div class="chat">
+                  <div class="bubble in"><span class="tag">IN</span><p>A full week of leads, bookings and payouts from the new page.</p></div>
+                  <div class="bubble out"><span class="tag">OUT</span><p>Report: Saturday brings the money. Cost per lead down a third.</p></div>
+                </div>
+                <div class="tap-hint">Tap to flip back</div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card" data-agent="10" tabindex="0" role="button" aria-pressed="false" aria-label="Strategy Advisor — tap to flip">
+            <div class="card-inner">
+              <div class="face front">
+                <div class="photo"><img src="assets/avatars/agent-10.jpg" alt="Photoreal portrait of the Strategy Advisor, a fictional AI officer persona" loading="lazy"><span class="num">10</span></div>
+                <div class="front-body">
+                  <h3>Strategy Advisor</h3>
+                  <p class="hook">Reads the board, then names the next move before rivals see it.</p>
+                  <div class="meta"><span class="badge">GROW</span><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                  <div class="tap-hint">Tap to flip · task &amp; handoff</div>
+                </div>
+              </div>
+              <div class="face back">
+                <div class="back-head"><img src="assets/avatars/agent-10.jpg" alt=""><div><h4>Strategy Advisor</h4><span class="badge">GROW</span></div><span class="pill standby"><span class="dot"></span>ON STANDBY</span></div>
+                <div class="blk"><label>On Task</label><p>Turning week one's numbers into next week's orders for the whole floor.</p></div>
+                <div class="blk kpi"><label>Board Line</label><p>Next play priced &amp; queued for your word</p></div>
+                <div class="chat">
+                  <div class="bubble in"><span class="tag">IN</span><p>Data report: Saturday peak, cheaper leads, two bookings born in Support.</p></div>
+                  <div class="bubble out"><span class="tag">OUT</span><p>Next move: premium Saturday slots plus a photo-quote promo. Ready when you are.</p></div>
+                </div>
+                <div class="tap-hint">Tap to flip back</div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+      </div><!-- /.depts -->
+    </div><!-- /.chart-inner -->
+  </main>
+
+  <footer>
+    <b>Concept prototype — not a live product page.</b> Demo flow shown: launching a booking page for a local moving company, one order traveling the whole floor.<br>
+    All ten portraits are fictional AI-officer personas, generated for this concept. No real person's likeness is used.
+  </footer>
+</div><!-- /.wrap -->
+
+<script>
+(function () {
+  "use strict";
+
+  var NS = "http://www.w3.org/2000/svg";
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var chart   = document.getElementById("chart");
+  var svg     = document.getElementById("wires");
+  var founder = document.getElementById("founderCard");
+  var fPill   = document.getElementById("founderPill");
+  var runBtn  = document.getElementById("runBtn");
+  var readout = document.getElementById("readout");
+  var cards   = Array.prototype.slice.call(document.querySelectorAll(".card"));
+
+  var flowPath = null;   // hidden workflow path (founder -> 01 -> ... -> 10)
+  var pulse    = null;   // travelling work dot
+  var cum      = [0];    // cumulative path length at each waypoint
+
+  /* ---------------- flip cards ---------------- */
+  cards.forEach(function (card) {
+    function toggle() {
+      var flipped = card.classList.toggle("flipped");
+      card.setAttribute("aria-pressed", flipped ? "true" : "false");
+    }
+    card.addEventListener("click", toggle);
+    card.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+    });
+  });
+
+  /* ---------------- status pills ---------------- */
+  function setPill(card, state, text) {
+    card.querySelectorAll(".pill").forEach(function (p) {
+      p.className = "pill " + state;
+      p.innerHTML = "";
+      var d = document.createElement("span");
+      d.className = "dot";
+      p.appendChild(d);
+      p.appendChild(document.createTextNode(text));
+    });
+  }
+  function setFounderPill(text) {
+    fPill.innerHTML = "";
+    var d = document.createElement("span");
+    d.className = "dot";
+    fPill.appendChild(d);
+    fPill.appendChild(document.createTextNode(text));
+  }
+
+  /* ---------------- wiring ---------------- */
+  function relBox(el, origin) {
+    var r = el.getBoundingClientRect();
+    return {
+      cx: r.left - origin.left + r.width / 2,
+      top: r.top - origin.top,
+      bottom: r.top - origin.top + r.height
+    };
+  }
+  function curve(x1, y1, x2, y2) {
+    var my = (y1 + y2) / 2;
+    return "M" + x1.toFixed(1) + " " + y1.toFixed(1) +
+           " C " + x1.toFixed(1) + " " + my.toFixed(1) + ", " +
+                  x2.toFixed(1) + " " + my.toFixed(1) + ", " +
+                  x2.toFixed(1) + " " + y2.toFixed(1);
+  }
+  function addWire(d) {
+    var p = document.createElementNS(NS, "path");
+    p.setAttribute("d", d);
+    p.setAttribute("class", "wire");
+    svg.appendChild(p);
+  }
+
+  function draw() {
+    if (!chart || !svg || !founder) return;
+    var origin = chart.getBoundingClientRect();
+    if (origin.width === 0) return;
+    svg.setAttribute("viewBox", "0 0 " + origin.width + " " + origin.height);
+    svg.setAttribute("width", origin.width);
+    svg.setAttribute("height", origin.height);
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+    var f = relBox(founder, origin);
+
+    /* structure: founder -> dept heads -> cards */
+    chart.querySelectorAll(".dept").forEach(function (dept) {
+      var head = dept.querySelector(".dept-head");
+      var h = relBox(head, origin);
+      addWire(curve(f.cx, f.bottom, h.cx, h.top));
+      dept.querySelectorAll(".card").forEach(function (card) {
+        var c = relBox(card, origin);
+        addWire(curve(h.cx, h.bottom, c.cx, c.top));
+      });
+    });
+
+    /* workflow path: founder bottom -> each card top, in pipeline order */
+    var pts = [{ x: f.cx, y: f.bottom }];
+    cards.forEach(function (card) {
+      var c = relBox(card, origin);
+      pts.push({ x: c.cx, y: c.top });
+    });
+    var dAttr = pts.map(function (p, i) {
+      return (i === 0 ? "M" : "L") + p.x.toFixed(1) + " " + p.y.toFixed(1);
+    }).join(" ");
+    flowPath = document.createElementNS(NS, "path");
+    flowPath.setAttribute("d", dAttr);
+    flowPath.setAttribute("class", "wires-flow");
+    svg.appendChild(flowPath);
+
+    cum = [0];
+    var total = 0;
+    for (var i = 1; i < pts.length; i++) {
+      var dx = pts[i].x - pts[i - 1].x;
+      var dy = pts[i].y - pts[i - 1].y;
+      total += Math.sqrt(dx * dx + dy * dy);
+      cum.push(total);
+    }
+
+    pulse = document.createElementNS(NS, "circle");
+    pulse.setAttribute("r", "5");
+    pulse.setAttribute("class", "pulse-dot");
+    pulse.setAttribute("opacity", "0");
+    svg.appendChild(pulse);
+  }
+
+  function placeDot(len) {
+    if (!flowPath || !pulse) return;
+    var pt = flowPath.getPointAtLength(len);
+    pulse.setAttribute("cx", pt.x.toFixed(1));
+    pulse.setAttribute("cy", pt.y.toFixed(1));
+  }
+
+  /* ---------------- run sequence ---------------- */
+  function wait(ms) {
+    return new Promise(function (res) { setTimeout(res, reduceMotion ? 0 : ms); });
+  }
+  function moveDot(from, to, dur) {
+    return new Promise(function (res) {
+      if (reduceMotion || dur <= 0 || !flowPath) { placeDot(to); res(); return; }
+      var start = null;
+      function step(ts) {
+        if (start === null) start = ts;
+        var t = Math.min(1, (ts - start) / dur);
+        placeDot(from + (to - from) * t);
+        if (t < 1) { requestAnimationFrame(step); } else { res(); }
+      }
+      requestAnimationFrame(step);
+    });
+  }
+
+  var NAMES = {
+    1: "Research Analyst", 2: "Product Manager", 3: "Product Designer",
+    4: "Engineer", 5: "Marketing Specialist", 6: "Sales Associate",
+    7: "Operations Manager", 8: "Support Specialist", 9: "Data Analyst",
+    10: "Strategy Advisor"
+  };
+
+  var running = false;
+  function run() {
+    if (running) return;
+    running = true;
+    runBtn.disabled = true;
+    runBtn.textContent = "Running the week…";
+    draw();
+
+    cards.forEach(function (card) {
+      card.classList.remove("active", "done");
+      setPill(card, "queued", "QUEUED");
+    });
+    setFounderPill("DIRECTING");
+    readout.innerHTML = "The founder's order is <b>on the floor</b>";
+    if (pulse) { pulse.setAttribute("opacity", "1"); placeDot(0); }
+
+    var chain = Promise.resolve();
+    cards.forEach(function (card, i) {
+      chain = chain.then(function () {
+        var n = card.getAttribute("data-agent");
+        readout.innerHTML = "Order travelling to <b>" + n + " · " + NAMES[n] + "</b>";
+        return moveDot(cum[i], cum[i + 1], 520).then(function () {
+          card.classList.add("active");
+          setPill(card, "working", "WORKING");
+          readout.innerHTML = "<b>" + n + " · " + NAMES[n] + "</b> is on it";
+          return wait(760);
+        }).then(function () {
+          card.classList.remove("active");
+          card.classList.add("done");
+          setPill(card, "done", "DELIVERED");
+        });
+      });
+    });
+
+    chain.then(function () {
+      if (pulse) pulse.setAttribute("opacity", "0");
+      setFounderPill("IN COMMAND");
+      readout.innerHTML = "Week one closed — <b>14 leads in, 6 jobs booked</b>. Strategy has your next move.";
+      runBtn.disabled = false;
+      runBtn.textContent = "Run it again";
+      running = false;
+    });
+  }
+  runBtn.addEventListener("click", run);
+
+  /* ---------------- draw lifecycle ---------------- */
+  var resizeTimer = null;
+  window.addEventListener("resize", function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(draw, 160);
+  });
+  window.addEventListener("load", draw);
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(draw); }
+  draw();
+})();
+</script>
+</body>
+</html>

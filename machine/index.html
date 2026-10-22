@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Machine Room — 10 AI Stations, One Operator</title>
+<meta name="description" content="Prototype: ten AI workstations arranged as a glass-and-steel assembly line. Feed an idea in, a working company comes out.">
+<style>
+  :root{
+    --bg:#060607;
+    --panel:#0c0c0e;
+    --panel2:#101013;
+    --line:#26262c;
+    --steel:#9aa3ad;
+    --steel-dim:#5d646d;
+    --ink:#e9e6dc;
+    --ink-dim:#a7a294;
+    --gold:#d8b45a;
+    --gold-hi:#f4dc8f;
+    --gold-dim:#8a713a;
+    --mono:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1100px 420px at 50% -120px, rgba(216,180,90,.10), transparent 60%),
+      radial-gradient(800px 300px at 85% 110%, rgba(216,180,90,.05), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    min-height:100vh;
+    padding:26px 18px 40px;
+  }
+  /* faint lab floor grid */
+  body::after{
+    content:"";position:fixed;inset:auto 0 0 0;height:180px;pointer-events:none;
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 1px, transparent 1px 72px),
+      repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0 1px, transparent 1px 26px);
+    mask-image:linear-gradient(to top, rgba(0,0,0,.7), transparent);
+  }
+
+  /* ---------- header ---------- */
+  header.top{max-width:1560px;margin:0 auto 18px;text-align:center}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.34em;color:var(--gold);text-transform:uppercase}
+  h1{
+    font-size:clamp(30px,5vw,52px);font-weight:800;letter-spacing:.06em;margin:8px 0 6px;
+    background:linear-gradient(180deg,#fdf6dd,#d8b45a 55%,#8a713a);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 42px rgba(216,180,90,.12);
+  }
+  .sub{color:var(--ink-dim);font-size:clamp(13px,1.6vw,16px);max-width:720px;margin:0 auto}
+  .sub b{color:var(--ink)}
+  .stats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:16px 0 4px}
+  .chip{
+    font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--steel);
+    border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:rgba(255,255,255,.02);
+  }
+  .chip b{color:var(--gold-hi);font-weight:600}
+  .controls{display:flex;gap:10px;justify-content:center;margin-top:14px}
+  button.run{
+    font-family:var(--mono);letter-spacing:.18em;font-size:13px;font-weight:700;cursor:pointer;
+    color:#171106;background:linear-gradient(180deg,var(--gold-hi),var(--gold) 60%,#b08d3e);
+    border:1px solid #6e5620;border-radius:10px;padding:13px 26px;
+    box-shadow:0 0 0 1px rgba(244,220,143,.25),0 6px 24px rgba(216,180,90,.25);
+    transition:transform .15s ease, box-shadow .15s ease, opacity .15s;
+  }
+  button.run:hover{transform:translateY(-1px);box-shadow:0 0 0 1px rgba(244,220,143,.4),0 10px 30px rgba(216,180,90,.35)}
+  button.run:disabled{opacity:.55;cursor:wait;transform:none}
+  button.ghost{
+    font-family:var(--mono);letter-spacing:.16em;font-size:12px;cursor:pointer;color:var(--steel);
+    background:transparent;border:1px solid var(--line);border-radius:10px;padding:13px 18px;
+    transition:color .15s,border-color .15s;
+  }
+  button.ghost:hover{color:var(--gold-hi);border-color:var(--gold-dim)}
+
+  /* ---------- the line ---------- */
+  .line-scroll{max-width:1560px;margin:10px auto 0;position:relative}
+  .track{position:relative;display:flex;gap:14px;align-items:stretch;padding:6px 2px 14px}
+  .rail{
+    position:absolute;left:0;right:0;top:118px;height:5px;border-radius:3px;z-index:0;
+    background:linear-gradient(180deg,#3a3f46,#191b1f 60%,#2c3036);
+    box-shadow:0 1px 0 rgba(255,255,255,.05), inset 0 1px 2px rgba(0,0,0,.8);
+    overflow:hidden;
+  }
+  .rail::after{
+    content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(90deg, transparent 0 26px, rgba(216,180,90,.20) 26px 30px);
+    animation:conveyor 1.6s linear infinite;
+  }
+  @keyframes conveyor{from{transform:translateX(0)}to{transform:translateX(30px)}}
+  #packet{
+    position:absolute;top:109px;left:90px;width:22px;height:22px;margin-left:-11px;border-radius:50%;
+    background:radial-gradient(circle at 40% 35%, #fff8e1, var(--gold-hi) 38%, var(--gold) 62%, rgba(216,180,90,0) 78%);
+    box-shadow:0 0 18px 6px rgba(216,180,90,.55),0 0 44px 14px rgba(216,180,90,.22);
+    z-index:3;opacity:0;pointer-events:none;
+    transition:left .65s cubic-bezier(.45,.05,.35,1), opacity .3s;
+  }
+  #packet.on{opacity:1}
+
+  /* entry console + output bay */
+  .console,.bay{
+    flex:0 0 178px;align-self:flex-start;margin-top:34px;z-index:1;border-radius:14px;padding:14px 14px 16px;
+    background:linear-gradient(165deg,#151310,#0b0b0c 70%);border:1px solid var(--gold-dim);
+    box-shadow:0 0 0 1px rgba(216,180,90,.12), 0 10px 28px rgba(0,0,0,.5);
+  }
+  .bay{border-color:#3d3a30;background:linear-gradient(165deg,#12140f,#0b0b0c 70%)}
+  .console .tag,.bay .tag{font-family:var(--mono);font-size:10px;letter-spacing:.26em;color:var(--gold)}
+  .console h3,.bay h3{font-size:17px;letter-spacing:.04em;margin:6px 0 8px}
+  .console p,.bay p{font-family:var(--mono);font-size:11px;line-height:1.55;color:var(--steel)}
+  .console .job{margin-top:10px;border:1px dashed rgba(216,180,90,.4);border-radius:8px;padding:8px 9px;color:var(--ink);font-size:11.5px}
+  .bay .out{margin-top:10px;border:1px solid rgba(216,180,90,.35);border-radius:8px;padding:8px 9px;color:var(--ink);font-size:11.5px;background:rgba(216,180,90,.05)}
+
+  /* phases */
+  .phase{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:8px;z-index:1}
+  .phase-label{
+    align-self:center;font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:#0f0d06;font-weight:700;
+    background:linear-gradient(180deg,var(--gold-hi),var(--gold));border-radius:6px;padding:5px 14px 5px 17px;
+    box-shadow:0 2px 10px rgba(216,180,90,.25);
+  }
+  .phase-stations{display:flex;gap:10px;flex:1}
+
+  /* ---------- station ---------- */
+  .station{
+    flex:1 1 0;min-width:0;cursor:pointer;border-radius:14px;padding:12px 11px 13px;position:relative;
+    background:linear-gradient(168deg,var(--panel2),var(--panel) 55%,#08080a);
+    border:1px solid var(--line);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 12px 26px rgba(0,0,0,.45);
+    transition:border-color .2s, box-shadow .2s, transform .2s;
+  }
+  .station:hover{border-color:#3d3d45;transform:translateY(-2px)}
+  .station:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .station.selected{border-color:var(--gold);box-shadow:0 0 0 1px rgba(216,180,90,.45),0 14px 30px rgba(0,0,0,.5)}
+  .st-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+  .pill{
+    font-family:var(--mono);font-size:9px;letter-spacing:.18em;padding:3px 8px;border-radius:999px;
+    border:1px solid var(--line);color:var(--steel-dim);display:inline-flex;align-items:center;gap:5px;
+  }
+  .pill i{width:6px;height:6px;border-radius:50%;background:#4a4f57;display:block}
+  .station[data-status="working"] .pill{color:var(--gold-hi);border-color:var(--gold-dim)}
+  .station[data-status="working"] .pill i{background:var(--gold-hi);animation:blink .7s ease-in-out infinite alternate}
+  .station[data-status="done"] .pill{color:#0f0d06;background:linear-gradient(180deg,var(--gold-hi),var(--gold));border-color:#6e5620;font-weight:700}
+  .station[data-status="done"] .pill i{background:#0f0d06}
+  @keyframes blink{from{opacity:.35}to{opacity:1}}
+  .visual{display:block;width:100%;height:138px}
+  .core{transition:filter .4s}
+  .station[data-status="queued"] .core{filter:brightness(.45) saturate(.6)}
+  .station[data-status="working"] .core{filter:brightness(1.5) saturate(1.2);animation:corepulse 0.8s ease-in-out infinite alternate}
+  .station[data-status="done"] .core{filter:brightness(1.3) saturate(1.1)}
+  @keyframes corepulse{from{filter:brightness(1.2)}to{filter:brightness(1.75)}}
+  .ring{transform-origin:100px 58px;transition:stroke .3s}
+  .station[data-status="working"] .ring{animation:spin 2.6s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .plate{text-align:center;margin-top:2px}
+  .plate .num{font-family:var(--mono);font-size:10px;letter-spacing:.3em;color:var(--gold)}
+  .plate .role{
+    font-size:16.5px;font-weight:700;letter-spacing:.1em;color:#dfe3e8;margin-top:1px;
+    text-shadow:0 -1px 0 rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.08);
+  }
+  .plate .fn{font-size:10.5px;line-height:1.45;color:var(--steel-dim);margin-top:4px;min-height:28px}
+  .datawin{
+    margin-top:9px;background:#040405;border:1px solid #1d1d21;border-radius:8px;padding:8px 9px;
+    font-family:var(--mono);font-size:10.3px;line-height:1.5;
+    box-shadow:inset 0 2px 8px rgba(0,0,0,.85);
+  }
+  .datawin .ln{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .datawin .k-in{color:var(--steel);font-weight:700}
+  .datawin .k-out{color:var(--gold);font-weight:700}
+  .datawin .v-in{color:#aeb6bf}
+  .datawin .v-out{color:#eee7cf}
+  .tap-hint{margin-top:8px;text-align:center;font-family:var(--mono);font-size:9px;letter-spacing:.22em;color:#4c5158}
+
+  /* ---------- detail panel ---------- */
+  .panel{
+    max-width:1560px;margin:16px auto 0;border:1px solid var(--line);border-radius:14px;
+    background:linear-gradient(170deg,#101013,#0a0a0c);padding:18px 20px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 14px 30px rgba(0,0,0,.4);
+  }
+  .panel .p-kicker{font-family:var(--mono);font-size:10px;letter-spacing:.3em;color:var(--gold)}
+  .panel h2{font-size:clamp(19px,2.6vw,26px);margin:5px 0 4px;letter-spacing:.03em}
+  .panel .p-fn{color:var(--ink-dim);font-size:13.5px;max-width:860px;line-height:1.55}
+  .p-grid{display:grid;grid-template-columns:1fr 1fr 220px;gap:12px;margin-top:14px}
+  .p-cell{background:#050506;border:1px solid #1d1d21;border-radius:10px;padding:11px 13px}
+  .p-cell .lab{font-family:var(--mono);font-size:9.5px;letter-spacing:.24em;margin-bottom:6px}
+  .p-cell .txt{font-family:var(--mono);font-size:12px;line-height:1.6;color:#cfd4da}
+  .p-cell.cycle .txt{font-size:19px;color:var(--gold-hi)}
+  .p-cell.cycle .note{font-family:var(--mono);font-size:10px;color:var(--steel-dim);margin-top:4px}
+
+  footer{max-width:1560px;margin:18px auto 0;text-align:center;color:#565b62;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;line-height:1.8}
+  footer b{color:var(--gold-dim);font-weight:600}
+
+  /* ---------- responsive: scroll-snap line on smaller screens ---------- */
+  @media (max-width:1180px){
+    .line-scroll{overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px;-webkit-overflow-scrolling:touch}
+    .track{width:max-content}
+    .phase{flex:none}
+    .station{flex:0 0 232px;scroll-snap-align:center}
+    .console,.bay{scroll-snap-align:center}
+    .p-grid{grid-template-columns:1fr}
+  }
+  @media (min-width:1181px){
+    .plate .fn{min-height:42px}
+    .datawin .ln{white-space:normal}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001s !important;animation-iteration-count:1 !important;transition-duration:.001s !important}
+    html{scroll-behavior:auto}
+    .rail::after{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- shared SVG defs: glass + core gradients -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="glassGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b3038"/>
+      <stop offset=".45" stop-color="#111318"/>
+      <stop offset="1" stop-color="#1b1f26"/>
+    </linearGradient>
+    <radialGradient id="coreGrad" cx=".5" cy=".42" r=".65">
+      <stop offset="0" stop-color="#fffbe9"/>
+      <stop offset=".35" stop-color="#f4dc8f"/>
+      <stop offset=".7" stop-color="#d8b45a"/>
+      <stop offset="1" stop-color="#7c6224"/>
+    </radialGradient>
+    <linearGradient id="steelGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#79828d"/>
+      <stop offset=".5" stop-color="#3c4149"/>
+      <stop offset="1" stop-color="#22262c"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="kicker">Prototype · The AI Workforce, Rebuilt as a Line</div>
+  <h1>THE MACHINE ROOM</h1>
+  <p class="sub">Ten AI workstations on one glass-and-steel line. <b>You feed the idea in</b> — research, build, sell, deliver, grow — and a <b>working company comes out</b> the other end.</p>
+  <div class="stats">
+    <span class="chip"><b>10</b> STATIONS</span>
+    <span class="chip"><b>5</b> PHASES</span>
+    <span class="chip"><b>1</b> OPERATOR</span>
+    <span class="chip">DEMO CYCLE <b>≈ 2 H 13 MIN</b></span>
+  </div>
+  <div class="controls">
+    <button class="run" id="runBtn" type="button">▶ RUN THE LINE</button>
+    <button class="ghost" id="resetBtn" type="button">RESET</button>
+  </div>
+</header>
+
+<div class="line-scroll" id="lineScroll">
+  <div class="track" id="track">
+    <div class="rail" aria-hidden="true"></div>
+    <div id="packet" aria-hidden="true"></div>
+
+    <!-- ENTRY CONSOLE -->
+    <aside class="console" aria-label="Operator console">
+      <div class="tag">FEED POINT</div>
+      <h3>YOU — THE OPERATOR</h3>
+      <p>One person. One idea.<br>The line does the rest.</p>
+      <p class="job">JOB TICKET<br>“Launch a booking page for a local moving company.”</p>
+    </aside>
+
+    <!-- PHASE: FIND -->
+    <section class="phase" aria-label="Find phase">
+      <div class="phase-label">FIND</div>
+      <div class="phase-stations">
+
+        <article class="station" tabindex="0" role="button" aria-label="Station 01, Research. Activate for details."
+          data-status="queued" data-num="01" data-role="Research" data-phase="FIND"
+          data-fn="Scans the market before anything is built — rival movers, going rates, and the exact words customers type when they need a move."
+          data-in="Raw idea from the operator: “Launch a booking page for a local moving company.”"
+          data-out="Market brief — 3 rival movers mapped, top local search terms, going rates for 2- and 3-bedroom moves."
+          data-cycle="≈ 14 min">
+          <div class="st-head"><span class="pill"><i></i><span class="pill-txt">QUEUED</span></span></div>
+          <svg class="visual" viewBox="0 0 200 138" aria-hidden="true">
+            <ellipse cx="100" cy="126" rx="72" ry="7" fill="#000" opacity=".55"/>
+            <rect x="46" y="116" width="108" height="9" rx="3" fill="url(#steelGrad)"/>
+            <rect x="60" y="12" width="80" height="106" rx="10" fill="url(#glassGrad)" stroke="#59616c" stroke-width="1.4"/>
+            <rect x="69" y="21" width="62" height="88" rx="7" fill="none" stroke="#ffffff" stroke-opacity=".07"/>
+            <circle class="ring" cx="100" cy="58" r="24" fill="none" stroke="#d8b45a" stroke-opacity=".55" stroke-width="2.5" stroke-dasharray="10 7"/>
+            <circle class="core" cx="100" cy="58" r="15" fill="url(#coreGrad)"/>
+            <line x1="78" y1="88" x2="122" y2="88" stroke="#454c55" stroke-width="2"/>
+            <line x1="84" y1="93" x2="116" y2="93" stroke="#33383f" stroke-width="2"/>
+          </svg>
+          <div class="plate">
+            <div class="num">STATION 01</div>
+            <div class="role">RESEARCH</div>
+            <p class="fn">Scans the market before anything gets built.</p>
+          </div>
+          <div class="datawin">
+            <span class="ln"><span class="k-in">IN&nbsp; ▸</span> <span class="v-in">Raw idea: booking page</span></span>
+            <span class="ln"><span class="k-out">OUT ▸</span> <span class="v-out">Market brief: rivals + terms</span></span>
+          </div>
+          <div class="tap-hint">TAP FOR DETAIL</div>
+        </article>
+
+        <article class="station" tabindex="0" role="button" aria-label="Station 02, Product. Activate for details."
+          data-status="queued" data-num="02" data-role="Product" data-phase="FIND"
+          data-fn="Turns research into a buildable offer — the scope, the price points, and a launch checklist with nothing left vague."
+          data-in="Market brief from Research — rivals, search terms, going rates."
+          data-out="Scoped offer — one-page booking flow with a deposit step, plus a 9-point launch checklist."
+          data-cycle="≈ 9 min">
+          <div class="st-head"><span class="pill"><i></i><span class="pill-txt">QUEUED</span></span></div>
+          <svg class="visual" viewBox="0 0 200 138" aria-hidden="true">
+            <ellipse cx="100" cy="126" rx="72" ry="7" fill="#000" opacity=".55"/>
+            <rect x="46" y="116" width="108" height="9" rx="3" fill="url(#steelGrad)"/>
+            <rect x="60" y="12" width="80" height="106" rx="10" fill="url(#glassGrad)" stroke="#59616c" stroke-width="1.4"/>
+            <rect x="69" y="21" width="62" height="88" rx="7" fill="none" stroke="#ffffff" stroke-opacity=".07"/>
+            <circle class="ring" cx="100" cy="58" r="24" fill="none" stroke="#d8b45a" stroke-opacity=".55" stroke-width="2.5" stroke-dasharray="10 7"/>
+            <circle class="core" cx="100" cy="58" r="15" fill="url(#coreGrad)"/>
+            <line x1="78" y1="88" x2="122" y2="88" stroke="#454c55" stroke-width="2"/>
+            <line x1="84" y1="93" x2="116" y2="93" stroke="#33383f" stroke-width="2"/>
+          </svg>
+          <div class="plate">
+            <div class="num">STATION 02</div>
+            <div class="role">PRODUCT</div>
+            <p class="fn">Turns research into a scoped, buildable offer.</p>
+          </div>
+          <div class="datawin">
+            <span class="ln"><span class="k-in">IN&nbsp; ▸</span> <span class="v-in">Market brief</span></span>
+            <span class="ln"><span class="k-out">OUT ▸</span> <span class="v-out">Scoped offer + checklist</span></span>
+          </div>
+          <div class="tap-hint">TAP FOR DETAIL</div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- PHASE: BUILD -->
+    <section class="phase" aria-label="Build phase">
+      <div class="phase-label">BUILD</div>
+      <div class="phase-stations">
+
+        <article class="station" tabindex="0" role="button" aria-label="Station 03, Design. Activate for details."
+          data-status="queued" data-num="03" data-role="Design" data-phase="BUILD"
+          data-fn="Draws the page — layout, brand styling, and a mobile-first mock that Engineering can build from without guessing."
+          data-in="Scoped offer + launch checklist from Product."
+          data-out="Design mock — hero, booking-form layout, trust badges, mobile-first."
+          data-cycle="≈ 22 min">
+          <div class="st-head"><span class="pill"><i></i><span class="pill-txt">QUEUED</span></span></div>
+          <svg class="visual" viewBox="0 0 200 138" aria-hidden="true">
+            <ellipse cx="100" cy="126" rx="72" ry="7" fill="#000" opacity=".55"/>
+            <rect x="46" y="116" width="108" height="9" rx="3" fill="url(#steelGrad)"/>
+            <rect x="60" y="12" width="80" height="106" rx="10" fill="url(#glassGrad)" stroke="#59616c" stroke-width="1.4"/>
+            <rect x="69" y="21" width="62" height="88" rx="7" fill="none" stroke="#ffffff" stroke-opacity=".07"/>
+            <circle class="ring" cx="100" cy="58" r="24" fill="none" stroke="#d8b45a" stroke-opacity=".55" stroke-width="2.5" stroke-dasharray="10 7"/>
+            <circle class="core" cx="100" cy="58" r="15" fill="url(#coreGrad)"/>
+            <line x1="78" y1="88" x2="122" y2="88" stroke="#454c55" stroke-width="2"/>
+            <line x1="84" y1="93" x2="116" y2="93" stroke="#33383f" stroke-width="2"/>
+          </svg>
+          <div class="plate">
+            <div class="num">STATION 03</div>
+            <div class="role">DESIGN</div>
+            <p class="fn">Draws the page — layout, styling, mobile-first.</p>
+          </div>
+          <div class="datawin">
+            <span class="ln"><span class="k-in">IN&nbsp; ▸</span> <span class="v-in">Offer + checklist</span></span>
+            <span class="ln"><span class="k-out">OUT ▸</span> <span class="v-out">Design mock, ready to build</span></span>
+          </div>
+          <div class="tap-hint">TAP FOR DETAIL</div>
+        </article>
+
+        <article class="station" tabindex="0" role="button" aria-label="Station 04, Engineering. Activate for details."
+          data-status="queued" data-num="04" data-role="Engineering" data-phase="BUILD"
+          data-fn="Builds the working page — booking form, calendar slots, and the deposit payment hook — then tests the whole flow end to end."
+          data-in="Approved design mock from Design."
+          data-out="Live booking page — form + calendar + deposit payment, tested end to end."
+          data-cycle="≈ 38 min">
+          <div class="st-head"><span class="pill"><i></i><span class="pill-txt">QUEUED</span></span></div>
+          <svg class="visual" viewBox="0 0 200 138" aria-hidden="true">
+            <ellipse cx="100" cy="126" rx="72" ry="7" fill="#000" opacity=".55"/>
+            <rect x="46" y="116" width="108" height="9" rx="3" fill="url(#steelGrad)"/>
+            <rect x="60" y="12" width="80" height="106" rx="10" fill="url(#glassGrad)" stroke="#59616c" stroke-width="1.4"/>
+            <rect x="69" y="21" width="62" height="88" rx="7" fill="none" stroke="#ffffff" stroke-opacity=".07"/>
+            <circle class="ring" cx="100" cy="58" r="24" fill="none" stroke="#d8b45a" stroke-opacity=".55" stroke-width="2.5" stroke-dasharray="10 7"/>
+            <circle class="core" cx="100" cy="58" r="15" fill="url(#coreGrad)"/>
+            <line x1="78" y1="88" x2="122" y2="88" stroke="#454c55" stroke-width="2"/>
+            <line x1="84" y1="93" x2="116" y2="93" stroke="#33383f" stroke-width="2"/>
+          </svg>
+          <div class="plate">
+            <div class="num">STATION 04</div>
+            <div class="role">ENGINEERING</div>
+            <p class="fn">Builds the working page and tests it live.</p>
+          </div>
+          <div class="datawin">
+            <span class="ln"><span class="k-in">IN&nbsp; ▸</span> <span class="v-in">Approved design mock</span></span>
+            <span class="ln"><span class="k-out">OUT ▸</span> <span class="v-out">Live page: form + pay hook</span></span>
+          </div>
+          <div class="tap-hint">TAP FOR DETAIL</div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- PHASE: SELL -->
+    <section class="phase" aria-label="Sell phase">
+      <div class="phase-label">SELL</div>
+      <div class="phase-stations">
+
+        <article class="station" tabindex="0" role="button" aria-label="Station 05, Marketing. Activate for details."
+          data-status="queued" data-num="05" data-role="Marketing" data-phase="SELL"
+          data-fn="Announces the page — ad copy, launch posts, and local listings all pointed at the booking link."
+          data-in="Live booking page link from Engineering."
+          data-out="Launch kit — 3 ad variants, 5 social posts, updated local listings."
+          data-cycle="≈ 16 min">
+          <div class="st-head"><span class="pill"><i></i><span class="pill-txt">QUEUED</span></span></div>
+          <svg class="visual" viewBox="0 0 200 138" aria-hidden="true">
+            <ellipse cx="100" cy="126" rx="72" ry="7" fill="#000" opacity=".55"/>
+            <rect x="46" y="116" width="108" height="9" rx="3" fill="url(#steelGrad)"/>
+            <rect x="60" y="12" width="80" height="106" rx="10" fill="url(#glassGrad)" stroke="#59616c" stroke-width="1.4"/>
+            <rect x="69" y="21" width="62" height="88" rx="7" fill="none" stroke="#ffffff" stroke-opacity=".07"/>
+            <circle class="ring" cx="100" cy="58" r="24" fill="none" stroke="#d8b45a" stroke-opacity=".55" stroke-width="2.5" stroke-dasharray="10 7"/>
+            <circle class="core" cx="100" cy="58" r="15" fill="url(#coreGrad)"/>
+            <line x1="78" y1="88" x2="122" y2="88" stroke="#454c55" stroke-width="2"/>
+            <line x1="84" y1="93" x2="116" y2="93" stroke="#33383f" stroke-width="2"/>
+          </svg>
+          <div class="plate">
+            <div class="num">STATION 05</div>
+            <div class="role">MARKETING</div>
+            <p class="fn">Announces it — ads, posts, local listings.</p>
+          </div>
+          <div class="datawin">
+            <span class="ln"><span class="k-in">IN&nbsp; ▸</span> <span class="v-in">Live page link</span></span>
+            <span class="ln"><span class="k-out">OUT ▸</span> <span class="v-out">Launch kit: ads + posts</span></span>
+          </div>
+          <div class="tap-hint">TAP FOR DETAIL</div>
+        </article>
+
+        <article class="station" tabindex="0" role="button" aria-label="Station 06, Sales. Activate for details."
+          data-status="queued" data-num="06" data-role="Sales" data-phase="SELL"
+          data-fn="Works every lead the launch creates — quotes out fast, and follow-ups on a timer for anyone who goes quiet."
+          data-in="Inbound leads from the launch kit."
+          data-out="Quotes sent to 6 leads; follow-ups scheduled for the 4 who went quiet."
+          data-cycle="≈ 11 min">
+          <div class="st-head"><span class="pill"><i></i><span class="pill-txt">QUEUED</span></span></div>
+          <svg class="visual" viewBox="0 0 200 138" aria-hidden="true">
+            <ellipse cx="100" cy="126" rx="72" ry="7" fill="#000" opacity=".55"/>
+            <rect x="46" y="116" width="108" height="9" rx="3" fill="url(#steelGrad)"/>
+            <rect x="60" y="12" width="80" height="106" rx="10" fill="url(#glassGrad)" stroke="#59616c" stroke-width="1.4"/>
+            <rect x="69" y="21" width="62" height="88" rx="7" fill="none" stroke="#ffffff" stroke-opacity=".07"/>
+            <circle class="ring" cx="100" cy="58" r="24" fill="none" stroke="#d8b45a" stroke-opacity=".55" stroke-width="2.5" stroke-dasharray="10 7"/>
+            <circle class="core" cx="100" cy="58" r="15" fill="url(#coreGrad)"/>
+            <line x1="78" y1="88" x2="122" y2="88" stroke="#454c55" stroke-width="2"/>
+            <line x1="84" y1="93" x2="116" y2="93" stroke="#33383f" stroke-width="2"/>
+          </svg>
+          <div class="plate">
+            <div class="num">STATION 06</div>
+            <div class="role">SALES</div>
+            <p class="fn">Works every lead — quotes out, follow-ups set.</p>
+          </div>
+          <div class="datawin">
+            <span class="ln"><span class="k-in">IN&nbsp; ▸</span> <span class="v-in">Inbound leads</span></span>
+            <span class="ln"><span class="k-out">OUT ▸</span> <span class="v-out">Quotes sent + follow-ups</span></span>
+          </div>
+          <div class="tap-hint">TAP FOR DETAIL</div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- PHASE: DELIVER -->
+    <section class="phase" aria-label="Deliver phase">
+      <div class="phase-label">DELIVER</div>
+      <div class="phase-stations">
+
+        <article class="station" tabindex="0" role="button" aria-label="Station 07, Operations. Activate for details."
+          data-status="queued" data-num="07" data-role="Operations" data-phase="DELIVER"
+          data-fn="Turns bookings into a day that runs — crews assigned, routes planned, and customer reminders sent before anyone asks."
+          data-in="Confirmed bookings from Sales."
+          data-out="Week scheduled — 2 crews routed, customer reminders sent."
+          data-cycle="≈ 8 min">
+          <div class="st-head"><span class="pill"><i></i><span class="pill-txt">QUEUED</span></span></div>
+          <svg class="visual" viewBox="0 0 200 138" aria-hidden="true">
+            <ellipse cx="100" cy="126" rx="72" ry="7" fill="#000" opacity=".55"/>
+            <rect x="46" y="116" width="108" height="9" rx="3" fill="url(#steelGrad)"/>
+            <rect x="60" y="12" width="80" height="106" rx="10" fill="url(#glassGrad)" stroke="#59616c" stroke-width="1.4"/>
+            <rect x="69" y="21" width="62" height="88" rx="7" fill="none" stroke="#ffffff" stroke-opacity=".07"/>
+            <circle class="ring" cx="100" cy="58" r="24" fill="none" stroke="#d8b45a" stroke-opacity=".55" stroke-width="2.5" stroke-dasharray="10 7"/>
+            <circle class="core" cx="100" cy="58" r="15" fill="url(#coreGrad)"/>
+            <line x1="78" y1="88" x2="122" y2="88" stroke="#454c55" stroke-width="2"/>
+            <line x1="84" y1="93" x2="116" y2="93" stroke="#33383f" stroke-width="2"/>
+          </svg>
+          <div class="plate">
+            <div class="num">STATION 07</div>
+            <div class="role">OPERATIONS</div>
+            <p class="fn">Schedules crews, routes, and reminders.</p>
+          </div>
+          <div class="datawin">
+            <span class="ln"><span class="k-in">IN&nbsp; ▸</span> <span class="v-in">Confirmed bookings</span></span>
+            <span class="ln"><span class="k-out">OUT ▸</span> <span class="v-out">Crews + routes scheduled</span></span>
+          </div>
+          <div class="tap-hint">TAP FOR DETAIL</div>
+        </article>
+
+        <article class="station" tabindex="0" role="button" aria-label="Station 08, Support. Activate for details."
+          data-status="queued" data-num="08" data-role="Support" data-phase="DELIVER"
+          data-fn="Answers customers before, during, and after the move — questions answered, changes handled, reviews requested."
+          data-in="Customer questions and change requests."
+          data-out="All messages answered; 2 date changes handled; review requests sent."
+          data-cycle="≈ 4 min / reply">
+          <div class="st-head"><span class="pill"><i></i><span class="pill-txt">QUEUED</span></span></div>
+          <svg class="visual" viewBox="0 0 200 138" aria-hidden="true">
+            <ellipse cx="100" cy="126" rx="72" ry="7" fill="#000" opacity=".55"/>
+            <rect x="46" y="116" width="108" height="9" rx="3" fill="url(#steelGrad)"/>
+            <rect x="60" y="12" width="80" height="106" rx="10" fill="url(#glassGrad)" stroke="#59616c" stroke-width="1.4"/>
+            <rect x="69" y="21" width="62" height="88" rx="7" fill="none" stroke="#ffffff" stroke-opacity=".07"/>
+            <circle class="ring" cx="100" cy="58" r="24" fill="none" stroke="#d8b45a" stroke-opacity=".55" stroke-width="2.5" stroke-dasharray="10 7"/>
+            <circle class="core" cx="100" cy="58" r="15" fill="url(#coreGrad)"/>
+            <line x1="78" y1="88" x2="122" y2="88" stroke="#454c55" stroke-width="2"/>
+            <line x1="84" y1="93" x2="116" y2="93" stroke="#33383f" stroke-width="2"/>
+          </svg>
+          <div class="plate">
+            <div class="num">STATION 08</div>
+            <div class="role">SUPPORT</div>
+            <p class="fn">Answers customers before, during, after.</p>
+          </div>
+          <div class="datawin">
+            <span class="ln"><span class="k-in">IN&nbsp; ▸</span> <span class="v-in">Questions + changes</span></span>
+            <span class="ln"><span class="k-out">OUT ▸</span> <span class="v-out">Answers sent, reviews asked</span></span>
+          </div>
+          <div class="tap-hint">TAP FOR DETAIL</div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- PHASE: GROW -->
+    <section class="phase" aria-label="Grow phase">
+      <div class="phase-label">GROW</div>
+      <div class="phase-stations">
+
+        <article class="station" tabindex="0" role="button" aria-label="Station 09, Data. Activate for details."
+          data-status="queued" data-num="09" data-role="Data" data-phase="GROW"
+          data-fn="Counts what matters — cost per booking, the busiest routes and days, and how many customers come back."
+          data-in="Bookings, ad spend, and reviews from the week."
+          data-out="Scoreboard — cost per booking, Saturday is the peak day, 1 in 5 customers repeat."
+          data-cycle="≈ 6 min">
+          <div class="st-head"><span class="pill"><i></i><span class="pill-txt">QUEUED</span></span></div>
+          <svg class="visual" viewBox="0 0 200 138" aria-hidden="true">
+            <ellipse cx="100" cy="126" rx="72" ry="7" fill="#000" opacity=".55"/>
+            <rect x="46" y="116" width="108" height="9" rx="3" fill="url(#steelGrad)"/>
+            <rect x="60" y="12" width="80" height="106" rx="10" fill="url(#glassGrad)" stroke="#59616c" stroke-width="1.4"/>
+            <rect x="69" y="21" width="62" height="88" rx="7" fill="none" stroke="#ffffff" stroke-opacity=".07"/>
+            <circle class="ring" cx="100" cy="58" r="24" fill="none" stroke="#d8b45a" stroke-opacity=".55" stroke-width="2.5" stroke-dasharray="10 7"/>
+            <circle class="core" cx="100" cy="58" r="15" fill="url(#coreGrad)"/>
+            <line x1="78" y1="88" x2="122" y2="88" stroke="#454c55" stroke-width="2"/>
+            <line x1="84" y1="93" x2="116" y2="93" stroke="#33383f" stroke-width="2"/>
+          </svg>
+          <div class="plate">
+            <div class="num">STATION 09</div>
+            <div class="role">DATA</div>
+            <p class="fn">Counts cost per booking, peaks, repeats.</p>
+          </div>
+          <div class="datawin">
+            <span class="ln"><span class="k-in">IN&nbsp; ▸</span> <span class="v-in">Bookings + costs</span></span>
+            <span class="ln"><span class="k-out">OUT ▸</span> <span class="v-out">Scoreboard: cost / booking</span></span>
+          </div>
+          <div class="tap-hint">TAP FOR DETAIL</div>
+        </article>
+
+        <article class="station" tabindex="0" role="button" aria-label="Station 10, Strategy. Activate for details."
+          data-status="queued" data-num="10" data-role="Strategy" data-phase="GROW"
+          data-fn="Reads the scoreboard and calls the next move for the whole line — where to add capacity, where to raise price."
+          data-in="Weekly scoreboard from Data."
+          data-out="Next move — add a second Saturday crew; raise the deposit on peak days."
+          data-cycle="≈ 5 min">
+          <div class="st-head"><span class="pill"><i></i><span class="pill-txt">QUEUED</span></span></div>
+          <svg class="visual" viewBox="0 0 200 138" aria-hidden="true">
+            <ellipse cx="100" cy="126" rx="72" ry="7" fill="#000" opacity=".55"/>
+            <rect x="46" y="116" width="108" height="9" rx="3" fill="url(#steelGrad)"/>
+            <rect x="60" y="12" width="80" height="106" rx="10" fill="url(#glassGrad)" stroke="#59616c" stroke-width="1.4"/>
+            <rect x="69" y="21" width="62" height="88" rx="7" fill="none" stroke="#ffffff" stroke-opacity=".07"/>
+            <circle class="ring" cx="100" cy="58" r="24" fill="none" stroke="#d8b45a" stroke-opacity=".55" stroke-width="2.5" stroke-dasharray="10 7"/>
+            <circle class="core" cx="100" cy="58" r="15" fill="url(#coreGrad)"/>
+            <line x1="78" y1="88" x2="122" y2="88" stroke="#454c55" stroke-width="2"/>
+            <line x1="84" y1="93" x2="116" y2="93" stroke="#33383f" stroke-width="2"/>
+          </svg>
+          <div class="plate">
+            <div class="num">STATION 10</div>
+            <div class="role">STRATEGY</div>
+            <p class="fn">Reads the scoreboard, calls the next move.</p>
+          </div>
+          <div class="datawin">
+            <span class="ln"><span class="k-in">IN&nbsp; ▸</span> <span class="v-in">Weekly scoreboard</span></span>
+            <span class="ln"><span class="k-out">OUT ▸</span> <span class="v-out">Next move: 2nd Sat. crew</span></span>
+          </div>
+          <div class="tap-hint">TAP FOR DETAIL</div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- OUTPUT BAY -->
+    <aside class="bay" aria-label="Finished output bay">
+      <div class="tag">EXIT BAY</div>
+      <h3>COMPANY OUT</h3>
+      <p>What rolls off the end of the line:</p>
+      <p class="out">A live booking page taking real jobs — built, launched, sold, delivered, and measured. By ten stations and one operator.</p>
+    </aside>
+
+  </div>
+</div>
+
+<!-- DETAIL PANEL -->
+<section class="panel" id="panel" aria-live="polite">
+  <div class="p-kicker" id="pKicker">STATION 01 · FIND PHASE</div>
+  <h2 id="pTitle">Research</h2>
+  <p class="p-fn" id="pFn"></p>
+  <div class="p-grid">
+    <div class="p-cell">
+      <div class="lab" style="color:var(--steel)">INPUT ▸ WHAT ARRIVED</div>
+      <div class="txt" id="pIn"></div>
+    </div>
+    <div class="p-cell">
+      <div class="lab" style="color:var(--gold)">OUTPUT ▸ WHAT IT PRODUCED</div>
+      <div class="txt" id="pOut"></div>
+    </div>
+    <div class="p-cell cycle">
+      <div class="lab" style="color:var(--steel)">CYCLE TIME</div>
+      <div class="txt" id="pCycle"></div>
+      <div class="note">DEMO DATA — FOR ILLUSTRATION</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <b>THE MACHINE ROOM</b> · PROTOTYPE V1 · DEMO FLOW — THE JOB, STATION TIMES, AND MESSAGES SHOWN ARE SAMPLE DATA FOR ILLUSTRATION.<br>
+  ORIGINAL DESIGN · NO FACES, NO MASCOTS · JUST THE LINE.
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var stations = Array.prototype.slice.call(document.querySelectorAll(".station"));
+  var packet = document.getElementById("packet");
+  var track = document.getElementById("track");
+  var scroller = document.getElementById("lineScroll");
+  var runBtn = document.getElementById("runBtn");
+  var resetBtn = document.getElementById("resetBtn");
+  var running = false;
+
+  /* ---------- detail panel ---------- */
+  var pKicker = document.getElementById("pKicker"),
+      pTitle  = document.getElementById("pTitle"),
+      pFn     = document.getElementById("pFn"),
+      pIn     = document.getElementById("pIn"),
+      pOut    = document.getElementById("pOut"),
+      pCycle  = document.getElementById("pCycle");
+
+  function select(st){
+    stations.forEach(function(s){ s.classList.toggle("selected", s === st); });
+    pKicker.textContent = "STATION " + st.dataset.num + " · " + st.dataset.phase + " PHASE";
+    pTitle.textContent  = st.dataset.role;
+    pFn.textContent     = st.dataset.fn;
+    pIn.textContent     = st.dataset["in"];
+    pOut.textContent    = st.dataset.out;
+    pCycle.textContent  = st.dataset.cycle;
+  }
+  stations.forEach(function(st){
+    st.addEventListener("click", function(){ select(st); });
+    st.addEventListener("keydown", function(e){
+      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); select(st); }
+    });
+  });
+  if(stations.length) select(stations[0]);
+
+  /* ---------- status handling ---------- */
+  function setStatus(st, status){
+    st.dataset.status = status;
+    var txt = st.querySelector(".pill-txt");
+    if(txt) txt.textContent = status.toUpperCase();
+  }
+  function resetAll(){
+    stations.forEach(function(s){ setStatus(s, "queued"); });
+    packet.classList.remove("on");
+  }
+
+  function centerX(el){
+    return el.offsetLeft + el.offsetWidth / 2;
+  }
+  function movePacketTo(x){
+    packet.style.left = x + "px";
+    var scrolled = scroller.scrollLeft,
+        viewX = x - scrolled;
+    if(viewX < 60 || viewX > scroller.clientWidth - 60){
+      scroller.scrollTo({ left: Math.max(0, x - scroller.clientWidth / 2), behavior: REDUCED ? "auto" : "smooth" });
+    }
+  }
+  function wait(ms){ return new Promise(function(r){ setTimeout(r, REDUCED ? 0 : ms); }); }
+
+  /* ---------- run the line ---------- */
+  async function runLine(){
+    if(running) return;
+    running = true;
+    runBtn.disabled = true;
+    runBtn.textContent = "RUNNING…";
+    resetAll();
+    await wait(250);
+
+    var first = stations[0];
+    if(!REDUCED){
+      packet.style.transition = "none";
+      packet.style.left = centerX(first) + "px";
+      packet.classList.add("on");
+      // force reflow so the next move animates
+      void packet.offsetWidth;
+      packet.style.transition = "";
+    } else {
+      packet.classList.add("on");
+    }
+
+    for(var i = 0; i < stations.length; i++){
+      var st = stations[i];
+      select(st);
+      if(!REDUCED) movePacketTo(centerX(st));
+      setStatus(st, "working");
+      await wait(1050);
+      setStatus(st, "done");
+      await wait(120);
+    }
+
+    // send the packet to the output bay
+    var bay = document.querySelector(".bay");
+    if(bay && !REDUCED) movePacketTo(centerX(bay));
+    await wait(650);
+    packet.classList.remove("on");
+
+    runBtn.textContent = "↻ RUN IT AGAIN";
+    runBtn.disabled = false;
+    running = false;
+  }
+
+  runBtn.addEventListener("click", runLine);
+  resetBtn.addEventListener("click", function(){
+    if(running) return;
+    resetAll();
+    runBtn.textContent = "▶ RUN THE LINE";
+  });
+
+  // keep the rail behind the stations on resize reflows
+  window.addEventListener("resize", function(){
+    track.style.minHeight = track.offsetHeight + "px";
+  });
+})();
+</script>
+</body>
+</html>
